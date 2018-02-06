@@ -1,26 +1,33 @@
 #include "stm32f3xx.h"
 
+#define HSI_VALUE	8000000
 #define FLASH_LATENCY	(2 << FLASH_ACR_LATENCY_Pos)
-#define PLL_MUL		RCC_CFGR_PLLMUL9
+#define PLLMUL		16
+
+uint32_t SystemCoreClock;
 
 
 #ifndef __NO_SYSTEM_INIT
 void SystemInit()
-{}
-#endif
-
-void main()
 {
-  volatile uint32_t cnt;
-
   /* Set Flash latency. */
   FLASH->ACR = FLASH->ACR & ~FLASH_ACR_LATENCY | FLASH_LATENCY;
 
   /* Configure PLL and select as sysclk source. */
-  RCC->CFGR = RCC->CFGR & ~RCC_CFGR_PLLMUL | RCC_CFGR_PLLMUL16;
+  RCC->CFGR = RCC->CFGR & ~RCC_CFGR_PLLMUL |
+    ((PLLMUL - 1) << RCC_CFGR_PLLMUL_Pos);
   RCC->CR |= RCC_CR_PLLON;
   while (!(RCC->CR & RCC_CR_PLLRDY));
   RCC->CFGR = RCC->CFGR & ~RCC_CFGR_SW | RCC_CFGR_SW_PLL;
+
+  SystemCoreClock = HSI_VALUE / 2 * PLLMUL;
+}
+#endif
+
+
+void main()
+{
+  volatile uint32_t cnt;
 
   RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
 
